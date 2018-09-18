@@ -11,16 +11,15 @@ namespace Nitgen.Identificacao.Multithread.Demo
 {
     public sealed class NitgenBiometriaTask
     {
-        internal NitgenBiometriaTask(Guid id, NBioAPI.IndexSearch mecanismoBusca, CancellationTokenSource cancellationSource)
+        internal NitgenBiometriaTask(Guid id, NBioAPI.IndexSearch mecanismoBusca)
         {
             Id = id;
             MecanismoBusca = mecanismoBusca;
-            CancellationSource = cancellationSource;
         }
 
         public Guid Id { get; }
         public NBioAPI.IndexSearch MecanismoBusca { get; }
-        public CancellationTokenSource CancellationSource { get; }
+        public CancellationTokenSource CancellationSource { get; private set; }
 
         public static NitgenBiometriaTask Novo(IEnumerable<Biometria> biometrias)
         {
@@ -28,25 +27,23 @@ namespace Nitgen.Identificacao.Multithread.Demo
             var nitgenSearchApi = new NBioAPI.IndexSearch(nitgenMainApi);
             nitgenSearchApi.InitEngine();
             CarregarBiometriasParaNitgen(nitgenMainApi, nitgenSearchApi, biometrias);
-            return new NitgenBiometriaTask(Guid.NewGuid(), nitgenSearchApi, new CancellationTokenSource());
+            return new NitgenBiometriaTask(Guid.NewGuid(), nitgenSearchApi);
         }
         
         public Task<int> CriarTaskParaIdentificacaoBiometrica(NBioAPI.Type.HFIR template)
         {
             var contextoIdentificacao = new ContextoParaIndentificacaoBiometrica(Id, MecanismoBusca, template);
+            CancellationSource = new CancellationTokenSource();
             var token = CancellationSource.Token;
             return new Task<int>((parametroState) =>
             {
                 var contexto = parametroState as ContextoParaIndentificacaoBiometrica;
-                Console.WriteLine($"{contexto.Id} - Iniciado ");
-
                 if (token.IsCancellationRequested)
-                    token.ThrowIfCancellationRequested();
+                    return 0;
 
                 var cbInfo = new NBioAPI.IndexSearch.CALLBACK_INFO_0();
                 NBioAPI.IndexSearch.FP_INFO nitgenBiometria;
                 var relogio = new Stopwatch();
-                Console.WriteLine($"{contexto.Id} - Localizando biometria...");
                 relogio.Start();
                 var retorno = contexto.MecanismoBusca.IdentifyData(contexto.TemplateLido, NBioAPI.Type.FIR_SECURITY_LEVEL.HIGH,
                     out nitgenBiometria, cbInfo);
@@ -54,9 +51,8 @@ namespace Nitgen.Identificacao.Multithread.Demo
                 Console.WriteLine($"{contexto.Id} - Localizado {nitgenBiometria.ID} em {relogio.Elapsed.TotalSeconds}");
 
                 if (token.IsCancellationRequested)
-                    token.ThrowIfCancellationRequested();
-
-                Console.WriteLine($"{contexto.Id} - Finalizado ");
+                    return 0;
+                
                 return (int)nitgenBiometria.ID;
             }, contextoIdentificacao, token);
         }

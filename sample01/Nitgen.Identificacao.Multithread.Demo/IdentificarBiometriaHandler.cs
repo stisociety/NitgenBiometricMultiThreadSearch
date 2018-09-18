@@ -30,7 +30,8 @@ namespace Nitgen.Identificacao.Multithread.Demo
             {
                 var task = buscaNitgen.CriarTaskParaIdentificacaoBiometrica(template);
                 tasks.TryAdd(buscaNitgen.Id, task);
-                task.Start();
+                if (!task.IsCanceled)
+                    task.Start();
             }
 
             Console.WriteLine($"Localizado digital ...");
@@ -42,13 +43,13 @@ namespace Nitgen.Identificacao.Multithread.Demo
             {
                 if (tasks.Any(t => t.Value.IsCompleted))
                 {
-                    var completadas = tasks.Where(t => t.Value.IsCompleted);
+                    var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
                     resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
 
                     if (resultado.Key != Guid.Empty)
                     {
                         foreach (var task in tasks.Where(t => t.Key != resultado.Key))
-                            _mecanismosBusca.FirstOrDefault(m=> m.Id.Equals(resultado.Key)).CancellationSource.Cancel();
+                            _mecanismosBusca.FirstOrDefault(m => m.Id.Equals(task.Key)).CancellationSource.Cancel();
                         possoSair = true;
                     }
                 }
@@ -58,12 +59,12 @@ namespace Nitgen.Identificacao.Multithread.Demo
 
                 Thread.Sleep(10);
             }
-
             relogio.Stop();
             Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
+
             return resultado.Key == Guid.Empty
-                    ? 0
-                    : resultado.Value.Result;
+                ? 0
+                : resultado.Value.Result;
         }
     }
 }
