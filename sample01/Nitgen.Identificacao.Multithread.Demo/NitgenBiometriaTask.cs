@@ -25,7 +25,10 @@ namespace Nitgen.Identificacao.Multithread.Demo
         {
             var nitgenMainApi = new NBioAPI();
             var nitgenSearchApi = new NBioAPI.IndexSearch(nitgenMainApi);
-            nitgenSearchApi.InitEngine();
+            var retorno = nitgenSearchApi.InitEngine();
+            if (retorno != NBioAPI.Error.NONE)
+                throw new Exception($"Erro inicializando mecanismo de busca. Erro: {retorno} - {NBioAPI.Error.GetErrorDescription(retorno)}");
+
             CarregarBiometriasParaNitgen(nitgenMainApi, nitgenSearchApi, biometrias);
             return new NitgenBiometriaTask(Guid.NewGuid(), nitgenSearchApi);
         }
@@ -38,6 +41,7 @@ namespace Nitgen.Identificacao.Multithread.Demo
             return new Task<int>((parametroState) =>
             {
                 var contexto = parametroState as ContextoParaIndentificacaoBiometrica;
+
                 if (token.IsCancellationRequested)
                     return 0;
 
@@ -45,8 +49,10 @@ namespace Nitgen.Identificacao.Multithread.Demo
                 NBioAPI.IndexSearch.FP_INFO nitgenBiometria;
                 var relogio = new Stopwatch();
                 relogio.Start();
+
                 var retorno = contexto.MecanismoBusca.IdentifyData(contexto.TemplateLido, NBioAPI.Type.FIR_SECURITY_LEVEL.HIGH,
                     out nitgenBiometria, cbInfo);
+
                 relogio.Stop();
                 Console.WriteLine($"{contexto.Id} - Localizado {nitgenBiometria.ID} em {relogio.Elapsed.TotalSeconds}");
 

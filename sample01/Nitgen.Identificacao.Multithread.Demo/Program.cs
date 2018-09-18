@@ -17,8 +17,8 @@ namespace Nitgen.Identificacao.Multithread.Demo
             var handler = new IdentificarBiometriaHandler();
 
             var numeroTotalBiometrias = repositorio.RecuperarNumeroTotalBiometrias();
-            var biometriasPorPagina = (numeroTotalBiometrias / 5) + 10;
-            for (int pagina = 1; pagina <= 5; pagina++)
+            var biometriasPorPagina = (numeroTotalBiometrias / 1) + 10;
+            for (int pagina = 1; pagina <= 1; pagina++)
             {
                 var biometriasRecuperadas = repositorio.RecuperarPagina(pagina, biometriasPorPagina);
                 handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);

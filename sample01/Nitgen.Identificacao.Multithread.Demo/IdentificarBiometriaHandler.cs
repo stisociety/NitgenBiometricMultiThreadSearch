@@ -43,8 +43,16 @@ namespace Nitgen.Identificacao.Multithread.Demo
             {
                 if (tasks.Any(t => t.Value.IsCompleted))
                 {
-                    var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
-                    resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
+                    try
+                    {
+                        var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
+                        resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        throw;
+                    }
 
                     if (resultado.Key != Guid.Empty)
                     {
@@ -57,7 +65,7 @@ namespace Nitgen.Identificacao.Multithread.Demo
                 if (tasks.All(t => t.Value.IsCompleted))
                     possoSair = true;
 
-                Thread.Sleep(10);
+                Thread.Sleep(500);
             }
             relogio.Stop();
             Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
