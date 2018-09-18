@@ -65,13 +65,13 @@ namespace Nitgen.Identificacao.Multithread.Demo
         {
             foreach (var biometria in biometrias)
             {
-                var nitgenConvertApi = new NBioAPI.Export(nitgenMainApi);
-                NBioAPI.Type.HFIR handle;
-                NBioAPI.IndexSearch.FP_INFO[] nitgenBiometria;
-                nitgenConvertApi.FDxToNBioBSPEx(biometria.TemplateISO, (uint)biometria.TemplateISO.Length,
-                    NBioAPI.Type.MINCONV_DATA_TYPE.MINCONV_TYPE_ISO, NBioAPI.Type.FIR_PURPOSE.ENROLL_FOR_IDENTIFICATION_ONLY,
-                    out handle);
-                nitgenSearchApi.AddFIR(handle, (uint)biometria.Id, out nitgenBiometria);
+                var biometriaNitgen = new NBioAPI.Type.FIR_TEXTENCODE
+                {
+                    TextFIR = biometria.TemplateISOText
+                };
+
+                NBioAPI.IndexSearch.FP_INFO[] informacaoBiometria;             
+                nitgenSearchApi.AddFIR(biometriaNitgen, (uint)biometria.Id, out informacaoBiometria);
             }
         }
 

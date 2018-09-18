@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace Nitgen.Identificacao.Multithread.Demo
 {
@@ -28,13 +29,24 @@ namespace Nitgen.Identificacao.Multithread.Demo
                 var fim = registros * (pagina);
                 var sql = @"WITH Biometrias AS
                             (
-                                SELECT id, CAST(templateISO AS IMAGE) AS templateISO, indice = ROW_NUMBER() OVER (ORDER BY id)
+                                SELECT id, TemplateISOText, indice = ROW_NUMBER() OVER (ORDER BY id)
                                 FROM Digital (NOLOCK)
                             )
-                            SELECT id, CAST(templateISO AS IMAGE) AS templateISO
-                            FROM Biometrias (NOLOCK)
-                            WHERE indice BETWEEN @inicio AND @fim";
-                return conexao.Query<Biometria>(sql);
+                            SELECT id, TemplateISOText
+                            FROM Biometrias
+                            WHERE indice BETWEEN @Inicio AND @Fim";
+                return conexao.Query<Biometria>(sql, new { Inicio = inicio, Fim = fim });
+            }
+        }
+
+        public int RecuperarNumeroTotalBiometrias()
+        {
+            using (var conexao = new SqlConnection(_stringConexao))
+            {
+                var sql = @"SELECT COUNT(id)
+                            FROM Digital (NOLOCK)
+                            WHERE ISNULL(templateISOText, '') != ''";
+                return conexao.Query<int>(sql).FirstOrDefault();
             }
         }
     }
