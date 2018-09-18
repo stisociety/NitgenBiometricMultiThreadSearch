@@ -38,27 +38,31 @@ namespace Nitgen.Identificacao.Multithread.Demo
             var relogio = new Stopwatch();
             relogio.Start();
             var possoSair = false;
-            KeyValuePair<Guid, Task<int>> resultado = new KeyValuePair<Guid, Task<int>>(Guid.Empty, null);
-            while (!possoSair)
-            {
-                if (tasks.Any(t => t.Value.IsCompleted))
-                {
-                    var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
-                    resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
+            //KeyValuePair<Guid, Task<int>> resultado = new KeyValuePair<Guid, Task<int>>(Guid.Empty, null);
+            var cancelation = new CancellationTokenSource();
+            Task.WaitAll(tasks.Select(t=> t.Value).ToArray(), cancelation.Token);
+            var resultado = tasks.FirstOrDefault(x => x.Value.Status == TaskStatus.RanToCompletion && x.Value.Result > 0);
 
-                    if (resultado.Key != Guid.Empty)
-                    {
-                        foreach (var task in tasks.Where(t => t.Key != resultado.Key))
-                            _mecanismosBusca.FirstOrDefault(m => m.Id.Equals(task.Key)).CancellationSource.Cancel();
-                        possoSair = true;
-                    }
-                }
+            //while (!possoSair)
+            //{
+            //    if (tasks.Any(t => t.Value.IsCompleted))
+            //    {
+            //        var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
+            //        resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
 
-                if (tasks.All(t => t.Value.IsCompleted))
-                    possoSair = true;
+            //        if (resultado.Key != Guid.Empty)
+            //        {
+            //            foreach (var task in tasks.Where(t => t.Key != resultado.Key))
+            //                _mecanismosBusca.FirstOrDefault(m => m.Id.Equals(task.Key)).CancellationSource.Cancel();
+            //            possoSair = true;
+            //        }
+            //    }
 
-                Thread.Sleep(10);
-            }
+            //    if (tasks.All(t => t.Value.IsCompleted))
+            //        possoSair = true;
+
+            //    Thread.Sleep(500);
+            //}
             relogio.Stop();
             Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
 
