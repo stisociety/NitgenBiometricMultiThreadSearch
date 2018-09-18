@@ -1,8 +1,9 @@
 ﻿using NITGEN.SDK.NBioBSP;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -11,40 +12,34 @@ namespace TasksDemo.Sample1
 {
     public class DigitalTask
     {
-        public DigitalTask(Task task, CancellationTokenSource cancellationSource)
+        public DigitalTask(Guid id, Task<int> task, CancellationTokenSource cancellationSource)
         {
+            Id = id;
             Task = task;
             CancellationSource = cancellationSource;
         }
 
-        public Task Task { get; }
+        public Guid Id { get; }
+        public Task<int> Task { get; }
         public CancellationTokenSource CancellationSource { get; }
     }
 
     public class BiometriaIndentificacaoContexto
     {
-        public BiometriaIndentificacaoContexto(Guid id, ConcurrentBag<DigitalTask> tasks, NBioAPI.IndexSearch mecanismoBusca, NBioAPI.Export conversor)
+        public BiometriaIndentificacaoContexto(Guid id, NBioAPI.IndexSearch mecanismoBusca, NBioAPI.Export conversor)
         {
             Id = id;
-            DemaisTasks = tasks;
             MecanismoBusca = mecanismoBusca;
             Conversor = conversor;
         }
 
         public Guid Id { get; }
-        public ConcurrentBag<DigitalTask> DemaisTasks { get; }
-        public DigitalTask TaskPropria { get; set; }
         public NBioAPI.IndexSearch MecanismoBusca { get; }
         public NBioAPI.Export Conversor { get; }
+        public NBioAPI.Type.HFIR TemplateLido { get; set; }
 
         public static BiometriaIndentificacaoContexto Novo(NBioAPI.IndexSearch mecanismoBusca, NBioAPI.Export conversor)
-            => new BiometriaIndentificacaoContexto(Guid.NewGuid(), new ConcurrentBag<DigitalTask>(), mecanismoBusca, conversor);
-
-        public void AdicionarTask(DigitalTask task)
-            => DemaisTasks.Add(task);
-
-        public void AdicionarTaskPropria(DigitalTask digitalTask)
-            => TaskPropria = digitalTask;
+            => new BiometriaIndentificacaoContexto(Guid.NewGuid(), mecanismoBusca, conversor);
     }
 
     public partial class Form1 : Form
@@ -54,83 +49,125 @@ namespace TasksDemo.Sample1
             InitializeComponent();
         }
 
-        private ConcurrentBag<DigitalTask> _taks;
+        private static ConcurrentBag<DigitalTask> _tasks;
 
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
                 var contextosIdentificacao = new List<BiometriaIndentificacaoContexto>();
-                var tasks = new ConcurrentBag<DigitalTask>();
-                for (int i = 0; i < 3; i++)
+                _tasks = new ConcurrentBag<DigitalTask>();
+
+                // Captura da digital (trocar para o que vem da catraca posteriormente)
+                var nitgenMainApi = new NBioAPI();
+                NBioAPI.Type.HFIR template;
+                var window = new NBioAPI.Type.WINDOW_OPTION();
+                nitgenMainApi.OpenDevice(NBioAPI.Type.DEVICE_ID.AUTO);
+                nitgenMainApi.Capture(out template, 0, window);
+                nitgenMainApi.CloseDevice(NBioAPI.Type.DEVICE_ID.AUTO);
+
+                var repositorio = new DigitalRepositorio();
+                var digitaisIniciais = repositorio.RecuperarPrimeirosRegistros();
+                var digitaisFinais = repositorio.RecuperarUltimosRegistros();
+
+                var task1 = Create(template, digitaisIniciais);
+                var task2 = Create(template, digitaisFinais);
+                
+                _tasks.Add(task1);
+                _tasks.Add(task2);
+
+                task1.Task.Start();
+                Thread.Sleep(500);
+                task2.Task.Start();
+
+                var relogio = new Stopwatch();
+                relogio.Start();
+
+                var possoSair = false;
+                DigitalTask resultado;
+                while (!possoSair )
                 {
-                    var nitgenMainApi = new NBioAPI();
-                    var nitgenSearchApi = new NBioAPI.IndexSearch(nitgenMainApi);
-                    var nitgenConvertApi = new NBioAPI.Export(nitgenMainApi);
-                    var contextoIdentificacao = BiometriaIndentificacaoContexto.Novo(nitgenSearchApi, nitgenConvertApi);
-                    var digitalTask = Create(contextoIdentificacao);
-                    contextoIdentificacao.AdicionarTaskPropria(digitalTask);
-                    contextosIdentificacao.Add(contextoIdentificacao);
-                    tasks.Add(digitalTask);
+                    if (_tasks.Any(t=> t.Task.IsCompleted))
+                    {
+                        var completadas = _tasks.Where(t => t.Task.IsCompleted);
+                        resultado = completadas.FirstOrDefault(c => c.Task.Result > 0);
+
+                        if (resultado != null)
+                        {
+                            foreach (var task in _tasks.Where(t => t.Id != resultado.Id))
+                                task.CancellationSource.Cancel();
+                            possoSair = true;
+                        }
+                    }
+
+                    if (_tasks.All(t => t.Task.IsCompleted))
+                        possoSair = true;
+
+                    Thread.Sleep(10);
                 }
 
-                foreach (var contexto in contextosIdentificacao)
-                    foreach (var digitalTask in tasks)
-                        if (contexto.TaskPropria.Task.Id != digitalTask.Task.Id)
-                            contexto.AdicionarTask(digitalTask);
-
-                foreach (var digitalTask in tasks)
-                    digitalTask.Task.Start();
+                relogio.Stop();
+                MessageBox.Show($"Terminou em {relogio.Elapsed.TotalSeconds}");
             }
             catch (OperationCanceledException ex)
             {
-                foreach (var task in _taks)
+                foreach (var task in _tasks)
                 {
                     task.CancellationSource.Dispose();
                 }
             }
         }
 
-        private DigitalTask Create(BiometriaIndentificacaoContexto contextoIndentificacao)
+        private DigitalTask Create(NBioAPI.Type.HFIR template, IEnumerable<Biometria> biometrias)
         {
+            
+            var nitgenMainApi = new NBioAPI();
+            var nitgenSearchApi = new NBioAPI.IndexSearch(nitgenMainApi);
+            nitgenSearchApi.InitEngine();
+            var nitgenConvertApi = new NBioAPI.Export(nitgenMainApi);
+            var contextoIdentificacao = BiometriaIndentificacaoContexto.Novo(nitgenSearchApi, nitgenConvertApi);
+            contextoIdentificacao.TemplateLido = template;
             var cancellationToken = new CancellationTokenSource();
             var token = cancellationToken.Token;
-            
-            var task = new Task(() =>
+
+            foreach (var biometria in biometrias)
             {
-                Console.WriteLine("Cancelando");
+                NBioAPI.Type.HFIR handle;
+                NBioAPI.IndexSearch.FP_INFO[] nitgenBiometria;
+                nitgenConvertApi.FDxToNBioBSPEx(biometria.TemplateISO, (uint)biometria.TemplateISO.Length,
+                    NBioAPI.Type.MINCONV_DATA_TYPE.MINCONV_TYPE_ISO, NBioAPI.Type.FIR_PURPOSE.ENROLL_FOR_IDENTIFICATION_ONLY,
+                    out handle);
 
-                foreach (var taskParaCancelar in contextoIndentificacao.DemaisTasks)
-                {
-                    taskParaCancelar.CancellationSource.Cancel();
-                    if (taskParaCancelar.CancellationSource.IsCancellationRequested)
-                        taskParaCancelar.CancellationSource.Token.ThrowIfCancellationRequested();
-                }
+                nitgenSearchApi.AddFIR(handle, (uint)biometria.Id, out nitgenBiometria);
+            }
 
-                Console.WriteLine("Cancelado");
-            }, cancellationToken.Token);
+            var task = new Task<int>((parametroState) =>
+            {
+                var contexto = parametroState as BiometriaIndentificacaoContexto;
+                Console.WriteLine($"{contexto.Id} - Iniciado ");
 
-            return new DigitalTask(task, cancellationToken);
+                if (token.IsCancellationRequested)
+                    token.ThrowIfCancellationRequested();
 
-            //var task = new TaskFactory().StartNew<int>((parametroState) =>
-            //{
-            //    var contexto = parametroState as BiometriaIndentificacaoContexto;
+                // Faz o Index Search
+                var cbInfo = new NBioAPI.IndexSearch.CALLBACK_INFO_0();
+                NBioAPI.IndexSearch.FP_INFO nitgenBiometria;
+                var relogio = new Stopwatch();
+                Console.WriteLine($"{contexto.Id} - Localizando biometria...");
+                relogio.Start();
+                var retorno = nitgenSearchApi.IdentifyData(contexto.TemplateLido, NBioAPI.Type.FIR_SECURITY_LEVEL.HIGH,
+                    out nitgenBiometria, cbInfo);
+                relogio.Stop();
+                Console.WriteLine($"{contexto.Id} - Localizado {nitgenBiometria.ID} em {relogio.Elapsed.TotalSeconds}");
 
-            //    Thread.Sleep(1000);
+                if (token.IsCancellationRequested)
+                    token.ThrowIfCancellationRequested();
 
-            //    Console.WriteLine("Cancelando");
+                Console.WriteLine($"{contexto.Id} - Finalizado ");
+                return (int)nitgenBiometria.ID;
+            }, contextoIdentificacao, token);
 
-            //    foreach (var taskParaCancelar in contexto.Tasks)
-            //    {
-            //        taskParaCancelar.CancellationSource.Cancel();
-            //        if (token.IsCancellationRequested)
-            //            token.ThrowIfCancellationRequested();
-            //    }
-
-            //    Console.WriteLine("Cancelado");
-
-            //    return 0;
-            //}, contextoIndentificacao, token);
+            return new DigitalTask(contextoIdentificacao.Id, task, cancellationToken);
         }
     }
 }
