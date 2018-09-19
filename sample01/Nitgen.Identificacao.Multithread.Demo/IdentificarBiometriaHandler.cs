@@ -40,7 +40,7 @@ namespace Nitgen.Identificacao.Multithread.Demo
             var possoSair = false;
             //KeyValuePair<Guid, Task<int>> resultado = new KeyValuePair<Guid, Task<int>>(Guid.Empty, null);
             var cancelation = new CancellationTokenSource();
-            Task.WaitAll(tasks.Select(t=> t.Value).ToArray(), cancelation.Token);
+            Task.WaitAll(tasks.Select(t => t.Value).ToArray(), cancelation.Token);
             var resultado = tasks.FirstOrDefault(x => x.Value.Status == TaskStatus.RanToCompletion && x.Value.Result > 0);
 
             //while (!possoSair)
@@ -89,17 +89,24 @@ namespace Nitgen.Identificacao.Multithread.Demo
                 tasks.TryAdd(buscaNitgen.Id, task);
                 task.Start();
             }
-            
+
             var cancelation = new CancellationTokenSource();
             Task.WaitAll(tasks.Select(t => t.Value).ToArray(), cancelation.Token);
             var resultado = tasks.FirstOrDefault(x => x.Value.Status == TaskStatus.RanToCompletion && x.Value.Result > 0);
-            
+
+            var biometria = resultado.Key == Guid.Empty
+                ? 0
+                : resultado.Value.Result;
+
+            foreach (var item in tasks)
+            {
+                item.Value.Dispose();
+            }
+
             relogio.Stop();
             Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
 
-            return resultado.Key == Guid.Empty
-                ? 0
-                : resultado.Value.Result;
+            return biometria;
         }
     }
 }

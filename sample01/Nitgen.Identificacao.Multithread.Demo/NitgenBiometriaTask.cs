@@ -152,10 +152,6 @@ namespace Nitgen.Identificacao.Multithread.Demo
                     relogio.Stop();
                     Console.WriteLine($"{contexto.Id} - Localizado {nitgenBiometria.ID} em {relogio.Elapsed.TotalSeconds}");
 
-                    nitgenSearchApi.Dispose();
-                    nitgenMainApi.Dispose();
-
-
                     return (int)nitgenBiometria.ID;
                 }
                 catch (Exception ex)
