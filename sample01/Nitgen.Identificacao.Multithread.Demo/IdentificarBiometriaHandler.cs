@@ -61,8 +61,8 @@ namespace Nitgen.Identificacao.Multithread.Demo
             //    if (tasks.All(t => t.Value.IsCompleted))
             //        possoSair = true;
 
-                Thread.Sleep(10);
-            }
+            //    Thread.Sleep(10);
+            //}
             relogio.Stop();
             Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
 
