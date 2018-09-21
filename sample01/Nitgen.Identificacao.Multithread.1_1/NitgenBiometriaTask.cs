@@ -47,7 +47,12 @@ namespace Nitgen.Identificacao.Multithread._1_1
                 foreach (var biometria in contexto.Biometrias)
                 {
                     if (token.IsCancellationRequested)
+                    {
+                        relogio.Stop();
+                        Console.WriteLine($"{contexto.Id} - cancelado pois encontrado em outra thread {relogio.Elapsed.TotalSeconds}");
                         return 0;
+                    }
+                        
 
                     var payload = new NBioAPI.Type.FIR_PAYLOAD();
                     var match = new NBioAPI.Type.MATCH_OPTION_0();
@@ -74,13 +79,8 @@ namespace Nitgen.Identificacao.Multithread._1_1
                         }                        
                     }
                 }
-
                 relogio.Stop();
                 Console.WriteLine($"{contexto.Id} - Nenhuma biometria encontrada em {relogio.Elapsed.TotalSeconds}");
-
-                if (token.IsCancellationRequested)
-                    return 0;
-
                 return 0;
             }, contextoIdentificacao, token);
         }
