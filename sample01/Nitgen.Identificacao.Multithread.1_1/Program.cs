@@ -6,20 +6,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nitgen.Identificacao.Simples.Demo
+namespace Nitgen.Identificacao.Multithread._1_1
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
-            var repositorio = new DigitaisRepositorio();
-            var nitgenMainApi = new NBioAPI();
-            var handler = new IdentificarBiometriaHandler();
             var corConsoleDefault = Console.ForegroundColor;
+            var repositorio = new DigitaisRepositorio();
+            var handler = new IdentificarBiometriaHandler();
 
-            var biometrias = repositorio.RecuperarPagina(1, 8000);
-            Console.WriteLine($"{biometrias.Count()} biometrias recuperadas...");
-            handler.CarregarBiometrias(biometrias);
+            var numeroTotalBiometrias = repositorio.RecuperarNumeroTotalBiometrias();
+            var biometriasPorPagina = (numeroTotalBiometrias / 30) + 10;
+            for (int pagina = 1; pagina <= 30; pagina++)
+            {
+                var biometriasRecuperadas = repositorio.RecuperarPagina(pagina, biometriasPorPagina);
+                Console.WriteLine($"Thread {pagina} será aberta com {biometriasRecuperadas.Count()}");
+                handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);
+            }
+
+            // Captura da digital (trocar para o que vem da catraca posteriormente)
+            var nitgenMainApi = new NBioAPI();
 
             var possoSair = false;
             while (!possoSair)
@@ -34,12 +41,12 @@ namespace Nitgen.Identificacao.Simples.Demo
 
                 var relogio = new Stopwatch();
                 relogio.Start();
-                Console.ForegroundColor = ConsoleColor.Green;
+                Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Identificando.....");
                 Console.ForegroundColor = corConsoleDefault;
                 var resultado = handler.IdentificarBiometria(template);
                 relogio.Stop();
-                Console.ForegroundColor = ConsoleColor.Green;
+                Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"Id digital encontrada {resultado} em {relogio.Elapsed.TotalSeconds} segundos");
                 Console.ForegroundColor = corConsoleDefault;
 

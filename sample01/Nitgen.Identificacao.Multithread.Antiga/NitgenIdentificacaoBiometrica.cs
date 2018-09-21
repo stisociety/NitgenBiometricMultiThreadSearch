@@ -119,6 +119,9 @@ namespace Nitgen.Identificacao.Multithread.Antiga
             {
                 var contexto = parametroState as ContextoParaIndentificacaoBiometrica;
 
+                Console.WriteLine($"{contexto.Id} - Iniciando thread..");
+
+
                 if (token.IsCancellationRequested)
                     return 0;
 

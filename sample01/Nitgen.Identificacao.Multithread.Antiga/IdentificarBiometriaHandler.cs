@@ -110,26 +110,51 @@ namespace Nitgen.Identificacao.Multithread.Antiga
                 if (!task.IsCanceled)
                     task.Start();
             }
-            
-            while (tasks.Count() > 0)
+
+            //while (tasks.Count() > 0)
+            //{
+            //    var indice = Task.WaitAny(tasks.Select(t => t.Value).ToArray());
+            //    var resultado = tasks.ElementAt(indice);
+
+            //    Console.WriteLine($"{resultado.Key} - Terminou com {resultado.Value.Result}");
+
+            //    if (resultado.Value.Result > 0)
+            //    {
+            //        relogio.Stop();
+            //        Console.WriteLine($"Localizada digital em > {relogio.Elapsed.TotalSeconds} segundos");
+            //        return resultado.Value.Result;
+            //    }
+
+            //    tasks.Remove(resultado.Key);
+            //}
+
+            var possoSair = false;
+            while (!possoSair)
             {
-                var indice = Task.WaitAny(tasks.Select(t => t.Value).ToArray());
-                var resultado = tasks.ElementAt(indice);
-
-                Console.WriteLine($"{resultado.Key} - Terminou com {resultado.Value.Result}");
-
-                if (resultado.Value.Result > 0)
+                if (tasks.Any(t => t.Value.IsCompleted))
                 {
-                    relogio.Stop();
-                    Console.WriteLine($"Localizada digital em > {relogio.Elapsed.TotalSeconds} segundos");
-                    return resultado.Value.Result;
+                    var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
+                    var resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
+
+                    if (resultado.Key != Guid.Empty)
+                    {
+                        foreach (var task in tasks.Where(t => t.Key != resultado.Key))
+                            _mecanismosBusca.FirstOrDefault(m => m.Id.Equals(task.Key)).CancellationSource.Cancel();
+
+                        relogio.Stop();
+                        Console.WriteLine($"Digital localizada em {relogio.Elapsed.TotalSeconds} segundos");
+                        return resultado.Value.Result;
+                    }
                 }
 
-                tasks.Remove(resultado.Key);
+                if (tasks.All(t => t.Value.IsCompleted))
+                    possoSair = true;
+
+                Thread.Sleep(10);
             }
 
             relogio.Stop();
-            Console.WriteLine($"Nenhuma digital localizada em > {relogio.Elapsed.TotalSeconds} segundos");
+            Console.WriteLine($"Nenhuma digital localizada em {relogio.Elapsed.TotalSeconds} segundos");
             return 0;
         }        
     }

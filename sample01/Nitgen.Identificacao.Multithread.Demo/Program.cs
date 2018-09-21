@@ -19,11 +19,11 @@ namespace Nitgen.Identificacao.Multithread.Demo
                 var handler = new IdentificarBiometriaHandler();
 
                 var numeroTotalBiometrias = repositorio.RecuperarNumeroTotalBiometrias();
-                var biometriasPorPagina = (numeroTotalBiometrias / 1) + 10;
-                for (int pagina = 1; pagina <= 1; pagina++)
+                var biometriasPorPagina = (numeroTotalBiometrias / Environment.ProcessorCount) + 10;
+                for (int pagina = 1; pagina <= Environment.ProcessorCount; pagina++)
                 {
                     var biometriasRecuperadas = repositorio.RecuperarPagina(pagina, biometriasPorPagina);
-                    //handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);
+                    handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);
                 }
 
                 // Captura da digital (trocar para o que vem da catraca posteriormente)
@@ -42,12 +42,12 @@ namespace Nitgen.Identificacao.Multithread.Demo
 
                     var relogio = new Stopwatch();
                     relogio.Start();
-                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("Identificando.....");
                     Console.ForegroundColor = corConsoleDefault;
-                    var resultado = handler.IdentificarBiometriaV2(template);
+                    var resultado = handler.IdentificarBiometria(template);
                     relogio.Stop();
-                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"Id digital encontrada {resultado} em {relogio.Elapsed.TotalSeconds} segundos");
                     Console.ForegroundColor = corConsoleDefault;
 

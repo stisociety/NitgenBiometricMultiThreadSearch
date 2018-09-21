@@ -144,6 +144,7 @@ namespace Nitgen.Identificacao.Multithread.Demo
                     }
 
                     var cbInfo = new NBioAPI.IndexSearch.CALLBACK_INFO_0();
+                    cbInfo.CallBackFunction = new NBioAPI.IndexSearch.INDEXSEARCH_CALLBACK(Callback);
                     NBioAPI.IndexSearch.FP_INFO nitgenBiometria;
                     var relogio = new Stopwatch();
                     relogio.Start();
@@ -160,6 +161,11 @@ namespace Nitgen.Identificacao.Multithread.Demo
                     return 0;
                 }
             }, contextoIdentificacao, token);
+        }
+        public uint Callback(ref NBioAPI.IndexSearch.CALLBACK_PARAM_0 param, IntPtr user)
+        {
+            Console.WriteLine("ProgressPos : " + param.FpInfo.ID);
+            return 0; // NBioAPI.IndexSearch.CALLBACK_RETURN.OK;
         }
 
         private sealed class ContextoParaIndentificacaoBiometrica

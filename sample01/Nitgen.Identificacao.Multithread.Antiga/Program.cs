@@ -17,11 +17,11 @@ namespace Nitgen.Identificacao.Multithread.Antiga
             var handler = new IdentificarBiometriaHandler();
             
             var numeroTotalBiometrias = repositorio.RecuperarNumeroTotalBiometrias();
-            Console.WriteLine($"Trabalhando com {Environment.ProcessorCount} threads...");
-            var biometriasPorPagina = (numeroTotalBiometrias / Environment.ProcessorCount) + 10;
-            for (int pagina = 1; pagina <= Environment.ProcessorCount; pagina++)
+            var biometriasPorPagina = (numeroTotalBiometrias / 10) + 10;
+            for (int pagina = 1; pagina <= 10; pagina++)
             {
                 var biometriasRecuperadas = repositorio.RecuperarPagina(pagina, biometriasPorPagina);
+                Console.WriteLine($"Thread {pagina} trabalhará com {biometriasRecuperadas.Count()} biometrias...");
                 handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);
             }
 

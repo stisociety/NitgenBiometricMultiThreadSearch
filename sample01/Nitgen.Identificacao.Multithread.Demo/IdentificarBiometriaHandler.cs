@@ -25,11 +25,11 @@ namespace Nitgen.Identificacao.Multithread.Demo
 
         public int IdentificarBiometria(NBioAPI.Type.HFIR template)
         {
-            var tasks = new ConcurrentDictionary<Guid, Task<int>>();
+            var tasks = new Dictionary<Guid, Task<int>>();
             foreach (var buscaNitgen in _mecanismosBusca)
             {
                 var task = buscaNitgen.CriarTaskParaIdentificacaoBiometrica(template);
-                tasks.TryAdd(buscaNitgen.Id, task);
+                tasks.Add(buscaNitgen.Id, task);
                 if (!task.IsCanceled)
                     task.Start();
             }
@@ -40,8 +40,29 @@ namespace Nitgen.Identificacao.Multithread.Demo
             var possoSair = false;
             //KeyValuePair<Guid, Task<int>> resultado = new KeyValuePair<Guid, Task<int>>(Guid.Empty, null);
             var cancelation = new CancellationTokenSource();
-            Task.WaitAll(tasks.Select(t => t.Value).ToArray(), cancelation.Token);
-            var resultado = tasks.FirstOrDefault(x => x.Value.Status == TaskStatus.RanToCompletion && x.Value.Result > 0);
+            //Task.WaitAll(tasks.Select(t => t.Value).ToArray(), cancelation.Token);
+            //var resultado = tasks.FirstOrDefault(x => x.Value.Status == TaskStatus.RanToCompletion && x.Value.Result > 0);
+
+            while (tasks.Count() > 0)
+            {
+                var indice = Task.WaitAny(tasks.Select(t => t.Value).ToArray());
+                var resultado = tasks.ElementAt(indice);
+
+                Console.WriteLine($"{resultado.Key} - Terminou com {resultado.Value.Result}");
+
+                if (resultado.Value.Result > 0)
+                {
+                    relogio.Stop();
+                    Console.WriteLine($"Localizada digital em > {relogio.Elapsed.TotalSeconds} segundos");
+                    return resultado.Value.Result;
+                }
+
+                tasks.Remove(resultado.Key);
+            }
+
+            relogio.Stop();
+            Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
+            return 0;
 
             //while (!possoSair)
             //{
@@ -63,12 +84,12 @@ namespace Nitgen.Identificacao.Multithread.Demo
 
             //    Thread.Sleep(10);
             //}
-            relogio.Stop();
-            Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
+            //relogio.Stop();
+            //Console.WriteLine($"Localizado digital em > {relogio.Elapsed.TotalSeconds} segundos");
 
-            return resultado.Key == Guid.Empty
-                ? 0
-                : resultado.Value.Result;
+            //return resultado.Key == Guid.Empty
+            //    ? 0
+            //    : resultado.Value.Result;
         }
 
         public int IdentificarBiometriaV2(NBioAPI.Type.HFIR template)
@@ -80,8 +101,8 @@ namespace Nitgen.Identificacao.Multithread.Demo
             var repositorio = new DigitaisRepositorio();
             var tasks = new ConcurrentDictionary<Guid, Task<int>>();
             var numeroTotalBiometrias = repositorio.RecuperarNumeroTotalBiometrias();
-            var biometriasPorPagina = (numeroTotalBiometrias / 1) + 10;
-            for (int pagina = 1; pagina <= 1; pagina++)
+            var biometriasPorPagina = (numeroTotalBiometrias / Environment.ProcessorCount) + 10;
+            for (int pagina = 1; pagina <= Environment.ProcessorCount; pagina++)
             {
                 var biometriasRecuperadas = repositorio.RecuperarPagina(pagina, biometriasPorPagina);
                 var buscaNitgen = NitgenBiometriaTaskV2.Novo(biometriasRecuperadas);

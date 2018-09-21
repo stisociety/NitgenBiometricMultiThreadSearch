@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F01301A2-5DAE-48CC-9BF8-EF79B37EA629}</ProjectGuid>
+    <ProjectGuid>{B8961202-71CB-47DA-B261-B4189C880E71}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Nitgen.Identificacao.Simples.Demo</RootNamespace>
-    <AssemblyName>Nitgen.Identificacao.Simples.Demo</AssemblyName>
+    <RootNamespace>DigitalPersona.Identificacao.Simples.Demo</RootNamespace>
+    <AssemblyName>DigitalPersona.Identificacao.Simples.Demo</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -35,8 +35,10 @@
     <Reference Include="Dapper, Version=1.50.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Dapper.1.50.5\lib\net451\Dapper.dll</HintPath>
     </Reference>
-    <Reference Include="DPUruNet, Version=1.0.0.1, Culture=neutral, PublicKeyToken=7f32ef930fec5e5f, processorArchitecture=MSIL" />
-    <Reference Include="NITGEN.SDK.NBioBSP, Version=1.2.3.0, Culture=neutral, PublicKeyToken=96eee45103d523d1, processorArchitecture=MSIL" />
+    <Reference Include="DPUruNet, Version=1.0.0.1, Culture=neutral, PublicKeyToken=7f32ef930fec5e5f, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\DigitalPersona\U.are.U SDK\Windows\Lib\.NET\DPUruNet.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -48,20 +50,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Biometria.cs" />
-    <Compile Include="DigitaisRepositorio.cs" />
-    <Compile Include="IdentificarBiometriaHandler.cs" />
+    <Compile Include="DigitalRepositorio.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TasksDemo.Sample1\TasksDemo.Sample1.csproj">
-      <Project>{87AE81E8-CB43-4DED-8137-77134D6E40ED}</Project>
-      <Name>TasksDemo.Sample1</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
