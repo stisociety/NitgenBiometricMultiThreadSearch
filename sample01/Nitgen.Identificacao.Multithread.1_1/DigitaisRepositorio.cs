@@ -24,7 +24,7 @@ namespace Nitgen.Identificacao.Multithread._1_1
             _stringConexao = builder.ConnectionString;
         }
 
-        public IEnumerable<Biometria> RecuperarPagina(int pagina, int registros)
+        public IList<Biometria> RecuperarPagina(int pagina, int registros)
         {
             using (var conexao = new SqlConnection(_stringConexao))
             {
@@ -32,13 +32,13 @@ namespace Nitgen.Identificacao.Multithread._1_1
                 var fim = registros * (pagina);
                 var sql = @"WITH Biometrias AS
                             (
-                                SELECT id, TemplateISOText, indice = ROW_NUMBER() OVER (ORDER BY id)
+                                SELECT id, CAST(templateISO AS IMAGE) AS templateISO, indice = ROW_NUMBER() OVER (ORDER BY id)
                                 FROM Digital (NOLOCK)
                             )
-                            SELECT id, TemplateISOText
+                            SELECT id, TemplateISO
                             FROM Biometrias
                             WHERE indice BETWEEN @Inicio AND @Fim";
-                return conexao.Query<Biometria>(sql, new { Inicio = inicio, Fim = fim });
+                return conexao.Query<Biometria>(sql, new { Inicio = inicio, Fim = fim }).ToList();
             }
         }
 
@@ -50,6 +50,17 @@ namespace Nitgen.Identificacao.Multithread._1_1
                             FROM Digital (NOLOCK)
                             WHERE ISNULL(templateISOText, '') != ''";
                 return conexao.Query<int>(sql).FirstOrDefault();
+            }
+        }
+
+        public IList<Biometria> RecuperarDiferenca(DateTime dataUltimaBusca)
+        {
+            using (var conexao = new SqlConnection(_stringConexao))
+            {
+                var sql = @"SELECT id, CAST(templateISO AS IMAGE) AS templateISO
+                            FROM Digital (NOLOCK)
+                            WHERE tCaptura >= @DataUltimaBusca";
+                return conexao.Query<Biometria>(sql, new { dataUltimaBusca }).ToList();
             }
         }
     }

@@ -9,6 +9,6 @@ namespace Nitgen.Identificacao.Multithread._1_1
     public sealed class Biometria
     {
         public int Id { get; set; }
-        public string TemplateISOText { get; set; }
+        public byte[] TemplateISO { get; set; }
     }
 }

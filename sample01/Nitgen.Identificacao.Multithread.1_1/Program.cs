@@ -17,12 +17,15 @@ namespace Nitgen.Identificacao.Multithread._1_1
             var handler = new IdentificarBiometriaHandler();
 
             var numeroTotalBiometrias = repositorio.RecuperarNumeroTotalBiometrias();
-            var biometriasPorPagina = (numeroTotalBiometrias / 30) + 10;
-            for (int pagina = 1; pagina <= 30; pagina++)
+            var biometriasPorPagina = (numeroTotalBiometrias / 10) + 10;
+            for (int pagina = 1; pagina <= 10; pagina++)
             {
                 var biometriasRecuperadas = repositorio.RecuperarPagina(pagina, biometriasPorPagina);
-                Console.WriteLine($"Thread {pagina} será aberta com {biometriasRecuperadas.Count()}");
-                handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);
+                if (biometriasRecuperadas.Count() > 0)
+                {
+                    Console.WriteLine($"Thread {pagina} será aberta com {biometriasRecuperadas.Count()}");
+                    handler.AdicionarMecanismoBuscaPara(biometriasRecuperadas);
+                }
             }
 
             // Captura da digital (trocar para o que vem da catraca posteriormente)
