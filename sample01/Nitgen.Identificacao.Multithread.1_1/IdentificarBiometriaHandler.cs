@@ -62,33 +62,25 @@ namespace Nitgen.Identificacao.Multithread._1_1
             Console.WriteLine($"Localizado digital ...");
             var relogio = new Stopwatch();
             relogio.Start();
-            var possoSair = false;
-            var cancelation = new CancellationTokenSource();
-
-            while (!possoSair)
+            var biometriaEncontrada = 0;
+            while (tasks.Count() > 0)
             {
-                if (tasks.Any(t => t.Value.IsCompleted))
+                var indice = Task.WaitAny(tasks.Select(t => t.Value).ToArray());
+                var resultado = tasks.ElementAt(indice);
+                Console.WriteLine($"{resultado.Key} - Terminou com {resultado.Value.Result} e foi {resultado.Value.Status}");
+                if (resultado.Value.Status == TaskStatus.RanToCompletion && resultado.Value.Result > 0)
                 {
-                    var completadas = tasks.Where(t => t.Value.IsCompleted && !t.Value.IsCanceled);
-                    var resultado = completadas.FirstOrDefault(c => c.Value.Result > 0);
-
-                    if (resultado.Key != Guid.Empty)
-                    {
-                        foreach (var task in tasks.Where(t => t.Key != resultado.Key))
-                            _mecanismosBusca.FirstOrDefault(m => m.Id.Equals(task.Key)).CancellationSource.Cancel();
-                        return resultado.Value.Result;
-                    }
+                    foreach (var task in tasks.Where(t=> t.Key != resultado.Key))
+                        _mecanismosBusca.FirstOrDefault(c => c.Id.Equals(task.Key)).CancellationSource.Cancel();
+                    relogio.Stop();
+                    Console.WriteLine($"Localizada digital em > {relogio.Elapsed.TotalSeconds} segundos");
+                    biometriaEncontrada = resultado.Value.Result;
                 }
-
-                if (tasks.All(t => t.Value.IsCompleted))
-                    possoSair = true;
-
-                Thread.Sleep(10);
+                tasks.Remove(resultado.Key);
             }
-
             relogio.Stop();
             Console.WriteLine($"Nenhuma biometria encontrada em > {relogio.Elapsed.TotalSeconds} segundos");
-            return 0;
+            return biometriaEncontrada;
         }
     }
 }
