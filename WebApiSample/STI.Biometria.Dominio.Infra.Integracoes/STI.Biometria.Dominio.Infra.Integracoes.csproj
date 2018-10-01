@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\STI.Biometria.Dominio.Infra.Integracoes.Nitgen\STI.Biometria.Dominio.Infra.Integracoes.Nitgen.csproj" />
+    <ProjectReference Include="..\STI.Biometria.Dominio\STI.Biometria.Dominio.csproj" />
+  </ItemGroup>
+
+</Project>

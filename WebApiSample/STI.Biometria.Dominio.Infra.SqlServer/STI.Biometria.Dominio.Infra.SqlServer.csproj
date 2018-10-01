@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="1.50.5" />
+    <PackageReference Include="STI.Infra.Crosscutting.Tenants" Version="3.0.0.1513" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\STI.Biometria.Dominio\STI.Biometria.Dominio.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\STI.Biometria.Dominio\STI.Biometria.Dominio.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NITGEN.SDK.NBioBSP">
+      <HintPath>C:\Windows\assembly\GAC_MSIL\NITGEN.SDK.NBioBSP\1.2.3.0__96eee45103d523d1\NITGEN.SDK.NBioBSP.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
